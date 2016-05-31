@@ -36,12 +36,12 @@ public struct A
 
     public static bool operator ==(A left, A right)
     {
-        throw new System.NotImplementedException();
+        return left.Equals(right);
     }
 
     public static bool operator !=(A left, A right)
     {
-        throw new System.NotImplementedException();
+        return !(left == right);
     }
 }
 ");
@@ -134,7 +134,7 @@ public struct A
 
     public static bool operator ==(A left, A right)
     {
-        throw new System.NotImplementedException();
+        return left.Equals(right);
     }
 }
 ", validationMode: TestValidationMode.AllowCompileErrors);
@@ -183,7 +183,7 @@ public struct A
 
     public static bool operator !=(A left, A right)
     {
-        throw new System.NotImplementedException();
+        return !(left == right);
     }
 }
 ", validationMode: TestValidationMode.AllowCompileErrors);
@@ -210,11 +210,11 @@ Public Structure A
     End Function
 
     Public Shared Operator =(left As A, right As A) As Boolean
-        Throw New System.NotImplementedException()
+        Return left.Equals(right)
     End Operator
 
     Public Shared Operator <>(left As A, right As A) As Boolean
-        Throw New System.NotImplementedException()
+        Return Not left = right
     End Operator
 End Structure
 ");
@@ -290,7 +290,7 @@ Public Structure A
     End Operator
 
     Public Shared Operator =(left As A, right As A) As Boolean
-        Throw New System.NotImplementedException()
+        Return left.Equals(right)
     End Operator
 End Structure
 ", validationMode: TestValidationMode.AllowCompileErrors);
@@ -330,7 +330,7 @@ Public Structure A
     End Operator
 
     Public Shared Operator <>(left As A, right As A) As Boolean
-        Throw New System.NotImplementedException()
+        Return Not left = right
     End Operator
 End Structure
 ", validationMode: TestValidationMode.AllowCompileErrors);
