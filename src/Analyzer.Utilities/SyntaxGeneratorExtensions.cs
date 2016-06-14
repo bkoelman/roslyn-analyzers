@@ -17,14 +17,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorEqualityDeclaration(this SyntaxGenerator generator,
-            INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorEqualityDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType,
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             List<SyntaxNode> statements = new List<SyntaxNode>();
 
@@ -60,7 +69,7 @@ namespace Analyzer.Utilities
                             leftArgument, "Equals"),
                         rightArgument)));
 
-            return generator.ComparisonOperatorDeclaration(OperatorKind.Equality, containingType, statements.ToArray());
+            return generator.ComparisonOperatorDeclaration(OperatorKind.Equality, containingType, leftArgument, rightArgument, accessibility, statements.ToArray());
         }
 
         /// <summary>
@@ -72,13 +81,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorInequalityDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorInequalityDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType, 
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             var returnStatement = generator.ReturnStatement(
                     generator.LogicalNotExpression(
@@ -86,7 +105,7 @@ namespace Analyzer.Utilities
                             leftArgument,
                             rightArgument)));
 
-            return generator.ComparisonOperatorDeclaration(OperatorKind.Inequality, containingType, returnStatement);
+            return generator.ComparisonOperatorDeclaration(OperatorKind.Inequality, containingType, leftArgument, rightArgument, accessibility, returnStatement);
         }
 
         /// <summary>
@@ -98,13 +117,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorLessThanDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorLessThanDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType,
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             SyntaxNode expression;
 
@@ -138,7 +167,7 @@ namespace Analyzer.Utilities
             }
 
             var returnStatement = generator.ReturnStatement(expression);
-            return generator.ComparisonOperatorDeclaration(OperatorKind.LessThan, containingType, returnStatement);
+            return generator.ComparisonOperatorDeclaration(OperatorKind.LessThan, containingType, leftArgument, rightArgument, accessibility, returnStatement);
         }
 
         /// <summary>
@@ -150,13 +179,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorLessThanOrEqualDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorLessThanOrEqualDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType,
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             SyntaxNode expression;
 
@@ -185,7 +224,7 @@ namespace Analyzer.Utilities
             }
 
             var returnStatement = generator.ReturnStatement(expression);
-            return generator.ComparisonOperatorDeclaration(OperatorKind.LessThanOrEqual, containingType, returnStatement);
+            return generator.ComparisonOperatorDeclaration(OperatorKind.LessThanOrEqual, containingType, leftArgument, rightArgument, accessibility, returnStatement);
         }
 
         /// <summary>
@@ -197,13 +236,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorGreaterThanDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorGreaterThanDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType,
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             SyntaxNode expression;
 
@@ -233,7 +282,7 @@ namespace Analyzer.Utilities
             }
 
             var returnStatement = generator.ReturnStatement(expression);
-            return generator.ComparisonOperatorDeclaration(OperatorKind.GreaterThan, containingType, returnStatement);
+            return generator.ComparisonOperatorDeclaration(OperatorKind.GreaterThan, containingType, leftArgument, rightArgument, accessibility, returnStatement);
         }
 
         /// <summary>
@@ -245,13 +294,23 @@ namespace Analyzer.Utilities
         /// <param name="containingType">
         /// A symbol specifying the type of the operands of the comparison operator.
         /// </param>
+        /// <param name="leftParameterName">
+        /// The optional identifier name of the left parameter.
+        /// </param>
+        /// <param name="rightParameterName">
+        /// The optional identifier name of the right parameter.
+        /// </param>
+        /// <param name="accessibility">
+        /// The optional operator method accessibility. Defaults to Public.
+        /// </param>
         /// <returns>
         /// A <see cref="SyntaxNode"/> representing the declaration.
         /// </returns>
-        public static SyntaxNode OperatorGreaterThanOrEqualDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType)
+        public static SyntaxNode OperatorGreaterThanOrEqualDeclaration(this SyntaxGenerator generator, INamedTypeSymbol containingType,
+            SyntaxNode leftParameterName = null, SyntaxNode rightParameterName = null, Accessibility accessibility = Accessibility.Public)
         {
-            var leftArgument = generator.IdentifierName("left");
-            var rightArgument = generator.IdentifierName("right");
+            SyntaxNode leftArgument = leftParameterName ?? generator.IdentifierName("left");
+            SyntaxNode rightArgument = rightParameterName ?? generator.IdentifierName("right");
 
             SyntaxNode expression;
 
@@ -284,20 +343,21 @@ namespace Analyzer.Utilities
             }
 
             var returnStatement = generator.ReturnStatement(expression);
-            return generator.ComparisonOperatorDeclaration(OperatorKind.GreaterThanOrEqual, containingType, returnStatement);
+            return generator.ComparisonOperatorDeclaration(OperatorKind.GreaterThanOrEqual, containingType, leftArgument, rightArgument, accessibility, returnStatement);
         }
 
-        private static SyntaxNode ComparisonOperatorDeclaration(this SyntaxGenerator generator, OperatorKind operatorKind, INamedTypeSymbol containingType, params SyntaxNode[] statements)
+        private static SyntaxNode ComparisonOperatorDeclaration(this SyntaxGenerator generator, OperatorKind operatorKind, 
+            INamedTypeSymbol containingType, SyntaxNode leftParameterName, SyntaxNode rightParameterName, Accessibility accessibility, params SyntaxNode[] statements)
         {
             return generator.OperatorDeclaration(
                 operatorKind,
                 new[]
                 {
-                    generator.ParameterDeclaration("left", generator.TypeExpression(containingType)),
-                    generator.ParameterDeclaration("right", generator.TypeExpression(containingType))
+                    generator.ParameterDeclaration(leftParameterName.ToString(), generator.TypeExpression(containingType)),
+                    generator.ParameterDeclaration(rightParameterName.ToString(), generator.TypeExpression(containingType))
                 },
                 generator.TypeExpression(SpecialType.System_Boolean),
-                Accessibility.Public,
+                accessibility,
                 DeclarationModifiers.Static,
                 statements);
         }

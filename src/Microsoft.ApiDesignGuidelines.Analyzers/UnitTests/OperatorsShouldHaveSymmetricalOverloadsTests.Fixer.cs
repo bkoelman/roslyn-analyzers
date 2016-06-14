@@ -92,7 +92,17 @@ class A
 
     public static bool operator ==(A a1, A a2)
     {
-        return !(a1 != a2);
+        if (ReferenceEquals(a1, a2))
+        {
+            return true;
+        }
+
+        if (ReferenceEquals(a1, null))
+        {
+            return false;
+        }
+
+        return a1.Equals(a2);
     }
 }", validationMode: TestValidationMode.AllowCompileErrors);
         }
@@ -214,7 +224,15 @@ class A
     end operator
 
     Public Shared Operator =(a1 As A, a2 As A) As Boolean
-        Return Not a1 <> a2
+        If ReferenceEquals(a1, a2) Then
+            Return True
+        End If
+
+        If ReferenceEquals(a1, Nothing) Then
+            Return False
+        End If
+
+        Return a1.Equals(a2)
     End Operator
 end class", validationMode: TestValidationMode.AllowCompileErrors);
         }

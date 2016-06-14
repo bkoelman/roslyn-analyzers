@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Diagnostics;
@@ -22,14 +21,14 @@ namespace Microsoft.ApiDesignGuidelines.Analyzers
     [ExportCodeFixProvider(LanguageNames.CSharp, LanguageNames.VisualBasic), Shared]
     public sealed class OperatorsShouldHaveSymmetricalOverloadsFixer : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(OperatorsShouldHaveSymmetricalOverloadsAnalyzer.RuleId);
+        public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(OperatorsShouldHaveSymmetricalOverloadsAnalyzer.RuleId);
 
-        public sealed override FixAllProvider GetFixAllProvider()
+        public override FixAllProvider GetFixAllProvider()
         {
             return WellKnownFixAllProviders.BatchFixer;
         }
 
-        public sealed override Task RegisterCodeFixesAsync(CodeFixContext context)
+        public override Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -53,14 +52,7 @@ namespace Microsoft.ApiDesignGuidelines.Analyzers
 
             Debug.Assert(containingOperator.IsUserDefinedOperator());
 
-            var generator = editor.Generator;
-            var newOperator = generator.OperatorDeclaration(
-                GetInvertedOperatorKind(containingOperator),
-                containingOperator.GetParameters().Select(p => generator.ParameterDeclaration(p)),
-                generator.TypeExpression(containingOperator.ReturnType),
-                containingOperator.DeclaredAccessibility,
-                generator.GetModifiers(operatorNode),
-                GetInvertedStatements(generator, containingOperator, semanticModel.Compilation));
+            var newOperator = GetSymmetricalOperatorDeclaration(editor.Generator, containingOperator, operatorNode, semanticModel);
 
             operatorNode = operatorNode.AncestorsAndSelf().First(a => a.RawKind == newOperator.RawKind);
 
@@ -68,54 +60,64 @@ namespace Microsoft.ApiDesignGuidelines.Analyzers
             return editor.GetChangedDocument();
         }
 
-        private IEnumerable<SyntaxNode> GetInvertedStatements(
-            SyntaxGenerator generator, IMethodSymbol containingOperator, Compilation compilation)
+        private SyntaxNode GetSymmetricalOperatorDeclaration(SyntaxGenerator generator, IMethodSymbol containingOperator,
+            SyntaxNode operatorNode, SemanticModel semanticModel)
         {
-            yield return GetInvertedStatement(generator, containingOperator, compilation);
+            SyntaxNode[] parameterNames = containingOperator.GetParameters().Select(p => generator.IdentifierName(p.Name)).ToArray();
+            Accessibility accessibility = containingOperator.DeclaredAccessibility;
+
+            switch (containingOperator.Name)
+            {
+                case WellKnownMemberNames.EqualityOperatorName:
+                    return generator.OperatorInequalityDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility);
+
+                case WellKnownMemberNames.InequalityOperatorName:
+                    return generator.OperatorEqualityDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility);
+
+                case WellKnownMemberNames.LessThanOperatorName:
+                    return TypeImplementsComparableInterface(containingOperator.ContainingType, semanticModel.Compilation)
+                        ? generator.OperatorGreaterThanDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility)
+                        : GetThrowingOperatorImplementation(OperatorKind.GreaterThan, containingOperator, operatorNode, generator, semanticModel);
+
+                case WellKnownMemberNames.LessThanOrEqualOperatorName:
+                    return TypeImplementsComparableInterface(containingOperator.ContainingType, semanticModel.Compilation)
+                        ? generator.OperatorGreaterThanOrEqualDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility)
+                        : GetThrowingOperatorImplementation(OperatorKind.GreaterThanOrEqual, containingOperator, operatorNode, generator, semanticModel);
+
+                case WellKnownMemberNames.GreaterThanOperatorName:
+                    return TypeImplementsComparableInterface(containingOperator.ContainingType, semanticModel.Compilation)
+                        ? generator.OperatorLessThanDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility)
+                        : GetThrowingOperatorImplementation(OperatorKind.LessThan, containingOperator, operatorNode, generator, semanticModel);
+
+                case WellKnownMemberNames.GreaterThanOrEqualOperatorName:
+                    return TypeImplementsComparableInterface(containingOperator.ContainingType, semanticModel.Compilation)
+                        ? generator.OperatorLessThanOrEqualDeclaration(containingOperator.ContainingType, parameterNames[0], parameterNames[1], accessibility)
+                        : GetThrowingOperatorImplementation(OperatorKind.LessThanOrEqual, containingOperator, operatorNode, generator, semanticModel);
+            }
+
+            throw new NotSupportedException("Unknown comparison operator.");
         }
 
-        private SyntaxNode GetInvertedStatement(
-            SyntaxGenerator generator, IMethodSymbol containingOperator, Compilation compilation)
+        private bool TypeImplementsComparableInterface(INamedTypeSymbol typeSymbol, Compilation compilation)
         {
-            if (containingOperator.Name == WellKnownMemberNames.EqualityOperatorName)
-            {
-                return generator.ReturnStatement(
-                    generator.LogicalNotExpression(
-                        generator.ValueEqualsExpression(
-                            generator.IdentifierName(containingOperator.Parameters[0].Name),
-                            generator.IdentifierName(containingOperator.Parameters[1].Name))));
-            }
-            else if (containingOperator.Name == WellKnownMemberNames.InequalityOperatorName)
-            {
-                return generator.ReturnStatement(
-                    generator.LogicalNotExpression(
-                        generator.ValueNotEqualsExpression(
-                            generator.IdentifierName(containingOperator.Parameters[0].Name),
-                            generator.IdentifierName(containingOperator.Parameters[1].Name))));
-            }
-            else
-            {
-                // If it's a  <   >   <=   or  >=   operator then we can't simply invert a call
-                // to the existing operator.  i.e. the body of the "<" method should *not* be:
-                //    return !(a > b);
-                // Just provide a throwing impl for now.
-                return generator.DefaultMethodStatement(compilation);
-            }
+            INamedTypeSymbol comparableType = WellKnownTypes.IComparable(compilation);
+            INamedTypeSymbol genericComparableType = WellKnownTypes.GenericIComparable(compilation);
+
+            return typeSymbol.AllInterfaces.Any(t => t.Equals(comparableType) || t.Equals(genericComparableType));
         }
 
-        private OperatorKind GetInvertedOperatorKind(IMethodSymbol containingOperator)
+        private SyntaxNode GetThrowingOperatorImplementation(OperatorKind operatorKind, IMethodSymbol containingOperator, SyntaxNode operatorNode, SyntaxGenerator generator, SemanticModel semanticModel)
         {
-            switch(containingOperator.Name)
-            {
-                case WellKnownMemberNames.EqualityOperatorName: return OperatorKind.Inequality;
-                case WellKnownMemberNames.InequalityOperatorName: return OperatorKind.Equality;
-                case WellKnownMemberNames.LessThanOperatorName: return OperatorKind.GreaterThan;
-                case WellKnownMemberNames.LessThanOrEqualOperatorName: return OperatorKind.GreaterThanOrEqual;
-                case WellKnownMemberNames.GreaterThanOperatorName: return OperatorKind.LessThan;
-                case WellKnownMemberNames.GreaterThanOrEqualOperatorName: return OperatorKind.LessThanOrEqual;
-            }
-
-            throw new InvalidOperationException();
+            return generator.OperatorDeclaration(
+                operatorKind,
+                containingOperator.GetParameters().Select(p => generator.ParameterDeclaration(p)),
+                generator.TypeExpression(containingOperator.ReturnType),
+                containingOperator.DeclaredAccessibility,
+                generator.GetModifiers(operatorNode),
+                new[]
+                {
+                    generator.DefaultMethodStatement(semanticModel.Compilation)
+                });
         }
     }
 }
